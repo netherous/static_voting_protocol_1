@@ -114,6 +114,7 @@ void input(int fd){
 		stringstream ss(str);
 		string first;
 		ss >> first;
+		cout << first << endl;
 		if(first == "server"){
 			string second;
 			ss >> second;
@@ -121,6 +122,11 @@ void input(int fd){
 			cout <<"server " <<SID<< " accepted server " <<n << ", " << fd << endl;
 			server_sockfd[n] = fd;
 			fd_node[fd] = n;		
+		}else if(first == "vote"){
+
+		}else if(first == "abort"){
+		}else if(first == "commit"){
+
 		}
 	}
 }
@@ -197,10 +203,11 @@ void p2t_handler();
 void info();
 void client_handler(){
 	char buff[20];
+	bzero(buff,sizeof(buff));
 	if(read(client_fd, buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
 	string input(buff);
 	string temp = "Server " + to_string(SID);
-	cout << temp << " handling client" << endl;
+	cout << temp << " handling client : "<<input << endl;
 	if(input=="update"){
 		update_handler();
 	}else if(input == "p1t"){
@@ -215,11 +222,36 @@ void client_handler(){
 }
 void update_handler(){
 	string s = "failed";
-	if(write(client_fd, s.c_str(), strlen(s.c_str())) < 0 ) perror("ERROR Writing");
+	if(write(client_fd, s.c_str(), s.size()) < 0 ) perror("ERROR Writing");
 }
-void p1t_handler(){}	
-void m1g_handler(){}
-void p2t_handler(){}
+void p1t_handler(){
+	if(SID <= 4){
+		for(int i = 5; i<=8;++i)
+			connection_set.erase(i);
+	}else{
+		for(int i = 1; i<=4;++i)
+			connection_set.erase(i);
+	}
+	cout << "size : " << connection_set.size()<< endl;
+}	
+void m1g_handler(){
+	if(SID > 1 && SID < 8){
+		for(int i = 2; i < 8; i++)
+			if(SID != i) connection_set.insert(i);
+	}
+}
+void p2t_handler(){
+	if(SID==1){
+		connection_set.clear();
+	}else if(SID == 8){
+		connection_set.clear();
+	}
+	else if(SID <= 4){
+		connection_set.erase(1);
+	}else{
+		connection_set.erase(8);
+	}
+}
 void info(){
 	stringstream ss;
 	ss << "Server " << SID << " info: ";

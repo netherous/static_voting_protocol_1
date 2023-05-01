@@ -70,6 +70,7 @@ void update_handler(){
 	string r="update";
 	if(write(server_sockfd[x], r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 	char buff[10];
+	bzero(buff,sizeof(buff));
 	if(read(server_sockfd[x], buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
 	cout << buff << endl;
 	info();
@@ -78,9 +79,9 @@ void p1t_handler(){
 	cout << "partitioning phase 1" << endl;
 	string r="p1t";
 	for(int fd: server_sockfd){
-		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+		if(write(fd, r.c_str(), r.size()) < 0 ) perror("ERROR Writing");
 	}
-	info();
+	// info();
 }
 void p2t_handler(){
 	cout << "partitioning phase 2" << endl;
@@ -88,7 +89,7 @@ void p2t_handler(){
 	for(int fd: server_sockfd){
 		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 	}
-	info();
+	// info();
 }
 void m1g_handler(){
 	cout << "merging" << endl;
@@ -96,7 +97,7 @@ void m1g_handler(){
 	for(int fd: server_sockfd){
 		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 	}
-	info();
+	// info();
 }
 void info(){
 	// cout << "requiring info" <<endl;	
