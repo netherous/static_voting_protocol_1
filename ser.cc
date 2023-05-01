@@ -120,7 +120,6 @@ void input(int fd){
 		stringstream ss(str);
 		string first;
 		ss >> first;
-		// cout << first << endl;
 		if(first == "server"){
 			string second;
 			ss >> second;
@@ -129,11 +128,18 @@ void input(int fd){
 			server_sockfd[n] = fd;
 			fd_node[fd] = n;		
 		}else if(first == "vote"){
-
+			stringstream ss;
+			lock = true;
+			ss << vn << " " << ru << " ";
+			for(int k : ds) ss << k << " ";
+			sendm(ss.str(), fd);
 		}else if(first == "abort"){
 			cout << "server " << SID << " aborted" << endl;
+			lock = false;
 		}else if(first == "commit"){
-
+			ss >> vn >> ru >> ds[0] >> ds[1] >> ds[2];
+			cout << "server " << SID << " commited" << endl;
+			lock = false;
 		}
 	}
 }
@@ -235,6 +241,7 @@ bool is_distinguished();
 void abourt();
 void commit();
 void update_handler(){
+	lock = true;
 	if(!is_distinguished()){
 		abourt();
 		sendm("failed",client_fd);
@@ -242,6 +249,7 @@ void update_handler(){
 		commit();
 		sendm("success",client_fd);
 	}
+	lock = false;
 }
 void p1t_handler(){
 	if(SID <= 4){
@@ -285,7 +293,58 @@ void info(){
 	cout << s << endl;
 	if(write(client_fd, s.c_str(), strlen(s.c_str())) < 0 ) perror("ERROR Writing");
 }
+
+void proccess_atribute(string s,int& vern, int& sc,set<int>& cnt,int i, vector<int>& ds){
+	stringstream ss(s);
+	int x;
+	ss >> x;
+	if(x < vern) return;
+	if(x == vern) {cnt.insert(i); return;}	
+	vern = x;
+	cnt.clear();
+	cnt.insert(i);
+	ss >> sc >> ds[0] >> ds[1] >> ds[2];
+}
+
 bool is_distinguished(){
+	int ver_n = vn;
+	int sc = ru;
+	set<int> count;	
+	count.insert(SID);
+	vector<int> ds1(ds.begin(),ds.end());
+	for(int node : connection_set){
+		sendm("vote", server_sockfd[node]);
+		char buff[200];
+		bzero(buff,sizeof(buff));
+		if(read(server_sockfd[node], buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
+		string str(buff);
+		proccess_atribute(str, ver_n, sc,count,node,ds1);	
+	}
+	printf("voting stat %d %d %d |  %d %d %d\n", ver_n,sc,count.size(),ds1[0],ds1[1],ds1[2]);
+	if(sc == 3){
+		int ds_present = 0;
+		for(int k:ds1) ds_present+= count.count(k);
+		if(ds_present >= 2){
+			vn = ver_n+1;
+			if(connection_set.size()+1 > ds_present){
+				ru = connection_set.size()+1; ds[0] = *count.begin();
+				ds[1]=ds[2]=9;
+			}
+			return true;
+		}
+	}else if(2*count.size() > sc || 
+				(2*count.size()==sc&& count.count(ds1[0])>0))
+	{
+		vn = ver_n+1; ru = connection_set.size()+1; ds[0] = *count.begin();
+		ds[1]=ds[2]=9;
+		if(connection_set.size()+1 == 3){
+			int j = 0;
+			for(int k:count)
+				ds[j++] = k;
+		}
+		return true;
+	}	
+	
 	return false;
 }
 void abourt(){
