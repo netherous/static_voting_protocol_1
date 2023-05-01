@@ -101,6 +101,7 @@ void client_handler();
 void input(int fd){
 	if(fd == client_fd){
 		client_handler();
+		return;
 	}
 	char buff[200];
 	bzero(buff,sizeof(buff));
@@ -108,7 +109,7 @@ void input(int fd){
 	string str(buff);
 	if(str == "client"){
 		client_fd = fd;
-		cout << "client" << endl;
+		cout << "server " << SID << " connected client" << endl;
 	}else{
 		stringstream ss(str);
 		string first;
@@ -143,13 +144,14 @@ void process_connections(int sockfd){
 				if(fd == sockfd){
 					int clientfd = accept(sockfd, (struct sockaddr*) &clientaddr, &clilen);
 					if(clientfd < 0) perror("ERROR accepting");
-					std::cout << clientfd << std::endl;
-					printf("server %d: got connection from %s port %d\n", SID,
-							inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+					// std::cout << clientfd << std::endl;
+					// printf("server %d: got connection from %s port %d\n", SID,
+					// 		inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
 					FD_SET(clientfd,&fds);
 					fd_list.push_back(clientfd);
 				}else{
 					//TODO process the given file descriptor	
+					cout << fd << endl;
 					input(fd);
 				}
 			}
@@ -166,7 +168,7 @@ void server(int server_id){
 	for(int i = 0 ; i < SID-1; i++){
 		create_connection(i);
 	}
-	for(int i = i; i <= SERVER_AMT;i++){
+	for(int i = 1; i <= SERVER_AMT;i++){
 		if(i!=SID) connection_set.insert(i);
 	}
 	sleep(1);
@@ -197,6 +199,8 @@ void client_handler(){
 	char buff[20];
 	if(read(client_fd, buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
 	string input(buff);
+	string temp = "Server " + to_string(SID);
+	cout << temp << " handling client" << endl;
 	if(input=="update"){
 		update_handler();
 	}else if(input == "p1t"){
@@ -211,20 +215,22 @@ void client_handler(){
 }
 void update_handler(){
 	string s = "failed";
-	if(write(client_fd, s.c_str(), s.length()) < 0 ) perror("ERROR Writing");
+	if(write(client_fd, s.c_str(), strlen(s.c_str())) < 0 ) perror("ERROR Writing");
 }
 void p1t_handler(){}	
 void m1g_handler(){}
 void p2t_handler(){}
 void info(){
 	stringstream ss;
-	ss << "Server " << SID << " info (vn,ru,ds,conn) : ";
-	ss << vn << " " << ru << " ";
+	ss << "Server " << SID << " info: ";
+	ss <<"vn:"<< vn << " ru:" << ru << " ds:";
 	for(int k: ds){
 		if(k < 9) ss << k << " ";
 	}
+	ss <<"conn:";
 	for(int k: connection_set)
 		ss << k << " ";
 	string s = ss.str();
-	if(write(client_fd, s.c_str(), s.length()) < 0 ) perror("ERROR Writing");
+	cout << s << endl;
+	if(write(client_fd, s.c_str(), strlen(s.c_str())) < 0 ) perror("ERROR Writing");
 }

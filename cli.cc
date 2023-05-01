@@ -99,15 +99,16 @@ void m1g_handler(){
 	info();
 }
 void info(){
-	cout << "requiring info" <<endl;	
+	// cout << "requiring info" <<endl;	
 	string r="info";
 	for(int fd: server_sockfd){
 		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 		char buff[1000];
+		bzero(buff,sizeof(buff));
 		if(read(fd, buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
-		cout << buff << endl;
+		cout << string(buff) << endl;
 	}
-	cout << "info end" << endl;
+	cout << "info end---------" << endl;
 }
 void launch_process(){
 	cout<<"launching client " <<endl;
