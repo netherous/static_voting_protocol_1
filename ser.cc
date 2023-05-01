@@ -25,7 +25,7 @@ std::vector<int> fd_list;
 constexpr int SERVER_AMT = 8;
 int SID = 0;
 vector<pair<string,int>> server_ip;
-vector<int>server_sockfd(10);
+vector<int>server_sockfd(10,0);
 map<int,int>fd_node;
 stringstream sstream;
 int client_fd = -1;
@@ -33,6 +33,11 @@ int vn =1;
 int ru = 8;
 vector<int> ds = {1,9,9};
 set<int> connection_set;
+bool lock = false;
+
+void sendm(string s, int fd){
+	if(write(fd, s.c_str(), s.size()) < 0 ) perror("ERROR Writing");
+}
 
 void create_connection(int i){
 	const char * IP = server_ip[i].first.c_str();
@@ -53,8 +58,8 @@ void create_connection(int i){
         perror("Error connection");
         exit(1);
     }
-	fd_node[sockfd] = i;
-	server_sockfd.push_back(sockfd);
+	fd_node[sockfd] = i+1;
+	server_sockfd[i+1] = sockfd;
 	string r="server " + to_string(SID);
 	if(write(sockfd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 }
@@ -111,20 +116,22 @@ void input(int fd){
 		client_fd = fd;
 		cout << "server " << SID << " connected client" << endl;
 	}else{
+		cout << "server " << SID << " received " << buff << endl;
 		stringstream ss(str);
 		string first;
 		ss >> first;
-		cout << first << endl;
+		// cout << first << endl;
 		if(first == "server"){
 			string second;
 			ss >> second;
 			int n = stoi(second);
-			cout <<"server " <<SID<< " accepted server " <<n << ", " << fd << endl;
+			// cout <<"server " <<SID<< " accepted server " <<n << ", " << fd << endl;
 			server_sockfd[n] = fd;
 			fd_node[fd] = n;		
 		}else if(first == "vote"){
 
 		}else if(first == "abort"){
+			cout << "server " << SID << " aborted" << endl;
 		}else if(first == "commit"){
 
 		}
@@ -138,6 +145,10 @@ void process_connections(int sockfd){
 	fd_set fds, fds1;
 	FD_ZERO(&fds);
 	FD_SET(sockfd,&fds);
+	for(int f: server_sockfd){
+		if(f != 0)
+			FD_SET(f, &fds);
+	}
 	bool finished = 0;
 	while(1 && !finished){
 		fds1 = fds;
@@ -157,7 +168,7 @@ void process_connections(int sockfd){
 					fd_list.push_back(clientfd);
 				}else{
 					//TODO process the given file descriptor	
-					cout << fd << endl;
+					// cout << fd << endl;
 					input(fd);
 				}
 			}
@@ -220,9 +231,17 @@ void client_handler(){
 		info();
 	}	
 }
+bool is_distinguished();
+void abourt();
+void commit();
 void update_handler(){
-	string s = "failed";
-	if(write(client_fd, s.c_str(), s.size()) < 0 ) perror("ERROR Writing");
+	if(!is_distinguished()){
+		abourt();
+		sendm("failed",client_fd);
+	}else{
+		commit();
+		sendm("success",client_fd);
+	}
 }
 void p1t_handler(){
 	if(SID <= 4){
@@ -266,3 +285,24 @@ void info(){
 	cout << s << endl;
 	if(write(client_fd, s.c_str(), strlen(s.c_str())) < 0 ) perror("ERROR Writing");
 }
+bool is_distinguished(){
+	return false;
+}
+void abourt(){
+	lock = false;
+	for(int i : connection_set){
+		sendm("abort", server_sockfd[i]);
+	}
+}
+
+void commit(){
+	lock = false;
+	stringstream ss;
+	ss << "commit "<< vn << " " << ru << " ";
+	for(int k:ds){
+		ss << k << " ";
+	}
+	for(int i: connection_set){
+		sendm(ss.str(), server_sockfd[i]);
+	}
+};

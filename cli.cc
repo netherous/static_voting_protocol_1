@@ -73,7 +73,7 @@ void update_handler(){
 	bzero(buff,sizeof(buff));
 	if(read(server_sockfd[x], buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
 	cout << buff << endl;
-	info();
+	// info();
 }
 void p1t_handler(){
 	cout << "partitioning phase 1" << endl;
