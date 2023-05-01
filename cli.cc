@@ -25,6 +25,7 @@ vector<pair<string,int>> server_ip;
 vector<int>server_sockfd;
 map<int,int>fd_node;
 stringstream sstream;
+void info();
 
 void create_connection(int i){
 	const char * IP = server_ip[i].first.c_str();
@@ -64,16 +65,49 @@ void read_file(string file_name){
 void update_handler(){
 	int x;
 	cin >> x;
-	cout << "update server " << char('A' -1 +x) << endl;
+	x--;
+	cout << "update server " << char('A'+x) << endl;
+	string r="update";
+	if(write(server_sockfd[x], r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+	char buff[10];
+	if(read(server_sockfd[x], buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
+	cout << buff << endl;
+	info();
 }
 void p1t_handler(){
 	cout << "partitioning phase 1" << endl;
+	string r="p1t";
+	for(int fd: server_sockfd){
+		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+	}
+	info();
 }
 void p2t_handler(){
 	cout << "partitioning phase 2" << endl;
+	string r="p2t";
+	for(int fd: server_sockfd){
+		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+	}
+	info();
 }
 void m1g_handler(){
 	cout << "merging" << endl;
+	string r="m1g";
+	for(int fd: server_sockfd){
+		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+	}
+	info();
+}
+void info(){
+	cout << "requiring info" <<endl;	
+	string r="info";
+	for(int fd: server_sockfd){
+		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
+		char buff[1000];
+		if(read(fd, buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
+		cout << buff << endl;
+	}
+	cout << "info end" << endl;
 }
 void launch_process(){
 	cout<<"launching client " <<endl;
@@ -85,8 +119,9 @@ void launch_process(){
 		string r="client";
 		if(write(fd, r.c_str(), strlen(r.c_str())) < 0 ) perror("ERROR Writing");
 	}
-	string input;
-	while(cin >> input){
+	while(1){
+		string input;
+		cin >> input;
 		if(input=="update"){
 			update_handler();
 		}else if(input == "p1t"){
@@ -95,6 +130,8 @@ void launch_process(){
 			p2t_handler();
 		}else if(input == "m1g"){
 			m1g_handler();
+		}else{
+			info();
 		}	
 	}
 	

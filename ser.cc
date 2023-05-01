@@ -29,6 +29,10 @@ vector<int>server_sockfd(10);
 map<int,int>fd_node;
 stringstream sstream;
 int client_fd = -1;
+int vn =1;
+int ru = 8;
+vector<int> ds = {1,9,9};
+set<int> connection_set;
 
 void create_connection(int i){
 	const char * IP = server_ip[i].first.c_str();
@@ -162,6 +166,9 @@ void server(int server_id){
 	for(int i = 0 ; i < SID-1; i++){
 		create_connection(i);
 	}
+	for(int i = i; i <= SERVER_AMT;i++){
+		if(i!=SID) connection_set.insert(i);
+	}
 	sleep(1);
 	process_connections(sockfd);
 	close(sockfd);
@@ -181,6 +188,43 @@ int main(){
 	return 0;
 }
 
+void update_handler();
+void p1t_handler();	
+void m1g_handler();
+void p2t_handler();
+void info();
 void client_handler(){
-
+	char buff[20];
+	if(read(client_fd, buff, sizeof(buff)) < 0 ) perror("ERROR Reading");
+	string input(buff);
+	if(input=="update"){
+		update_handler();
+	}else if(input == "p1t"){
+		p1t_handler();	
+	}else if(input == "p2t"){
+		p2t_handler();
+	}else if(input == "m1g"){
+		m1g_handler();
+	}else{
+		info();
+	}	
+}
+void update_handler(){
+	string s = "failed";
+	if(write(client_fd, s.c_str(), s.length()) < 0 ) perror("ERROR Writing");
+}
+void p1t_handler(){}	
+void m1g_handler(){}
+void p2t_handler(){}
+void info(){
+	stringstream ss;
+	ss << "Server " << SID << " info (vn,ru,ds,conn) : ";
+	ss << vn << " " << ru << " ";
+	for(int k: ds){
+		if(k < 9) ss << k << " ";
+	}
+	for(int k: connection_set)
+		ss << k << " ";
+	string s = ss.str();
+	if(write(client_fd, s.c_str(), s.length()) < 0 ) perror("ERROR Writing");
 }
