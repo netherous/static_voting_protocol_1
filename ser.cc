@@ -208,7 +208,7 @@ void forking(int amt){
 	}
 }
 
-int main(){
+int main(int argc, char** argv){
 	forking(SERVER_AMT);
 	return 0;
 }

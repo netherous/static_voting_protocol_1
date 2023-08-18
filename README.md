@@ -1,3 +1,3 @@
-Group:George Yi Khoa Diep
+Group:George Yi
 
 explanation:
